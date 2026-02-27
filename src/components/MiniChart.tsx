@@ -10,7 +10,6 @@ interface KlineData {
   high: number;
   low: number;
   close: number;
-  volume: number;
 }
 
 const TIMEFRAMES = [
@@ -32,7 +31,6 @@ async function fetchKlines(symbol: string, timeframe: string, limit = 100): Prom
     high: parseFloat(k[2]),
     low: parseFloat(k[3]),
     close: parseFloat(k[4]),
-    volume: parseFloat(k[5]),
   }));
 }
 
@@ -52,11 +50,11 @@ export function MiniChart({ symbol }: MiniChartProps) {
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { color: 'transparent' },
-        textColor: '#5a5a70',
+        textColor: '#718096',
       },
       grid: {
-        vertLines: { color: 'rgba(42, 42, 58, 0.3)' },
-        horzLines: { color: 'rgba(42, 42, 58, 0.3)' },
+        vertLines: { color: 'rgba(113, 128, 150, 0.1)' },
+        horzLines: { color: 'rgba(113, 128, 150, 0.1)' },
       },
       crosshair: { mode: 0 },
       rightPriceScale: { borderColor: 'transparent' },
@@ -66,12 +64,12 @@ export function MiniChart({ symbol }: MiniChartProps) {
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#00ffa3',
-      downColor: '#ff3366',
-      borderUpColor: '#00ffa3',
-      borderDownColor: '#ff3366',
-      wickUpColor: '#00ffa3',
-      wickDownColor: '#ff3366',
+      upColor: '#48bb78',
+      downColor: '#f56565',
+      borderUpColor: '#48bb78',
+      borderDownColor: '#f56565',
+      wickUpColor: '#48bb78',
+      wickDownColor: '#f56565',
     });
 
     chartRef.current = chart;
@@ -123,17 +121,17 @@ export function MiniChart({ symbol }: MiniChartProps) {
           <button
             key={tf.value}
             onClick={() => setTimeframe(tf.value)}
-            className={`px-2 py-1 text-[10px] font-medium rounded ${
+            className={`px-2 py-1 text-[10px] font-medium rounded-lg transition-all ${
               timeframe === tf.value 
-                ? 'bg-[var(--accent-primary)] text-black' 
-                : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'
+                ? 'bg-[var(--accent-primary)] text-white shadow-md' 
+                : 'clay-inset text-[var(--text-muted)]'
             }`}
           >
             {tf.label}
           </button>
         ))}
       </div>
-      <div ref={chartContainerRef} className="flex-1 min-h-[120px]" />
+      <div ref={chartContainerRef} className="flex-1 min-h-[100px]" />
     </div>
   );
 }

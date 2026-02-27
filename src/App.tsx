@@ -14,7 +14,6 @@ function App() {
       case 'home':
         return <HomeScreen onNavigate={setActiveTab} />;
       case 'markets':
-        return <MobileMarkets />;
       case 'trade':
         return <MobileMarkets />;
       case 'portfolio':
@@ -24,7 +23,7 @@ function App() {
       default:
         return (
           <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
-            <div className="w-20 h-20 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center mb-4">
+            <div className="w-20 h-20 clay-card flex items-center justify-center mb-4">
               <span className="text-4xl">🚧</span>
             </div>
             <h2 className="font-display text-xl font-semibold mb-2 capitalize">{activeTab}</h2>
@@ -35,7 +34,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] pb-16">
+    <div className="min-h-screen pb-20">
       <Header />
       <main className="px-4 pt-4">
         {renderContent()}

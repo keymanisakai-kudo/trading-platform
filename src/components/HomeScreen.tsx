@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { usePriceStore, fetchTickers } from '../stores/priceStore';
 import type { Ticker } from '../stores/priceStore';
 import { useBinanceWebSocket } from '../hooks/useBinanceWebSocket';
-import { TrendingUp, TrendingDown, Flame, Sparkles, Bitcoin, Search, Bell } from 'lucide-react';
+import { TrendingUp, TrendingDown, Flame, Sparkles, Bitcoin, Search, Bell, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 function formatPrice(price: string): string {
   const p = parseFloat(price);
@@ -18,77 +18,69 @@ function formatVolume(volume: string): string {
   return (v / 1e3).toFixed(1) + 'K';
 }
 
-
-// Featured tokens for Home screen
 const featuredTokens = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'PEPE'];
 
 interface TokenCardProps {
   ticker: Ticker;
-  onClick: () => void;
 }
 
-function TokenCard({ ticker, onClick }: TokenCardProps) {
+function TokenCard({ ticker }: TokenCardProps) {
   const priceChange = parseFloat(ticker.priceChangePercent);
   const isPositive = priceChange >= 0;
   const symbol = ticker.symbol.replace('USDT', '');
 
-  // Different gradient for featured tokens
   const gradients: Record<string, string> = {
-    BTC: 'from-orange-400 to-orange-600',
-    ETH: 'from-purple-400 to-purple-600',
-    SOL: 'from-purple-400 to-pink-500',
-    BNB: 'from-yellow-400 to-yellow-600',
-    XRP: 'from-blue-400 to-blue-600',
-    PEPE: 'from-green-400 to-green-600',
+    BTC: 'from-orange-400 to-pink-500',
+    ETH: 'from-purple-400 to-indigo-600',
+    SOL: 'from-pink-400 to-rose-600',
+    BNB: 'from-yellow-400 to-orange-600',
+    XRP: 'from-blue-400 to-cyan-600',
+    PEPE: 'from-green-400 to-emerald-600',
   };
 
   return (
-    <button
-      onClick={onClick}
-      className="flex-shrink-0 w-28 p-3 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] flex flex-col items-center gap-2"
-    >
-      <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradients[symbol] || 'from-gray-400 to-gray-600'} flex items-center justify-center text-white font-bold text-sm`}>
+    <div className="flex-shrink-0 w-32 p-4 clay-card-sm flex flex-col items-center gap-3">
+      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradients[symbol] || 'from-gray-400 to-gray-600'} flex items-center justify-center text-white font-bold shadow-lg`}>
         {symbol.slice(0, 2)}
       </div>
-      <div className="font-semibold text-sm">{symbol}</div>
-      <div className={`text-xs font-mono ${isPositive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
-        {isPositive ? '+' : ''}{priceChange.toFixed(2)}%
+      <div className="text-center">
+        <div className="font-semibold">{symbol}</div>
+        <div className={`text-sm font-mono ${isPositive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+          {isPositive ? '+' : ''}{priceChange.toFixed(2)}%
+        </div>
       </div>
-    </button>
+    </div>
   );
 }
 
 interface MarketRowProps {
   ticker: Ticker;
-  onClick: () => void;
 }
 
-function MarketRow({ ticker, onClick }: MarketRowProps) {
+function MarketRow({ ticker }: MarketRowProps) {
   const priceChange = parseFloat(ticker.priceChangePercent);
   const isPositive = priceChange >= 0;
   const symbol = ticker.symbol.replace('USDT', '');
 
   return (
-    <button
-      onClick={onClick}
-      className="flex items-center justify-between py-3 border-b border-[var(--border-subtle)]"
-    >
+    <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)] last:border-0">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center text-xs font-bold">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-sm font-bold text-gray-600">
           {symbol.slice(0, 2)}
         </div>
         <div>
-          <div className="font-medium text-sm">{symbol}/USDT</div>
-          <div className="text-xs text-[var(--text-muted)]">Vol: ${formatVolume(ticker.quoteVolume)}</div>
+          <div className="font-medium">{symbol}</div>
+          <div className="text-xs text-[var(--text-muted)]">${formatVolume(ticker.quoteVolume)}</div>
         </div>
       </div>
       <div className="text-right">
-        <div className="font-mono text-sm">${formatPrice(ticker.price)}</div>
-        <div className={`text-xs font-medium ${isPositive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+        <div className="font-mono font-medium">${formatPrice(ticker.price)}</div>
+        <div className={`text-sm flex items-center justify-end gap-1 ${isPositive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+          {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
           {isPositive ? '+' : ''}{priceChange.toFixed(2)}%
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -96,7 +88,7 @@ interface HomeScreenProps {
   onNavigate: (tab: string) => void;
 }
 
-export function HomeScreen({ onNavigate }: HomeScreenProps) {
+export function HomeScreen({ }: HomeScreenProps) {
   const { tickers, setTickers, setLoading, setError } = usePriceStore();
   
   useEffect(() => {
@@ -107,7 +99,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         setTickers(data);
         setError(null);
       } catch (err) {
-        setError('Failed to load');
+        setError('Failed');
       } finally {
         setLoading(false);
       }
@@ -122,12 +114,10 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
     .slice(0, 30);
 
-  // Get featured tickers
   const featuredTickers = featuredTokens
     .map(symbol => tickerList.find(t => t.symbol === `${symbol}USDT`))
     .filter(Boolean) as Ticker[];
 
-  // Top gainers and losers
   const gainers = [...tickerList]
     .filter(t => parseFloat(t.priceChangePercent) > 0)
     .sort((a, b) => parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent))
@@ -140,110 +130,91 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
   return (
     <div className="pb-4">
-      {/* Header Actions */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex-1 flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)]">
-          <Search size={18} className="text-[var(--text-muted)]" />
+      {/* Search */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex-1 clay-inset flex items-center gap-3 px-4 py-3">
+          <Search size={20} className="text-[var(--text-muted)]" />
           <input 
             type="text" 
             placeholder="Search tokens..." 
-            className="flex-1 bg-transparent text-sm focus:outline-none"
+            className="flex-1 bg-transparent text-sm outline-none"
           />
         </div>
-        <button className="ml-2 p-2.5 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)]">
+        <button className="w-12 h-12 clay-card-sm flex items-center justify-center">
           <Bell size={20} className="text-[var(--text-secondary)]" />
         </button>
       </div>
 
-      {/* Crypto Card Banner */}
-      <div className="bg-gradient-to-r from-[var(--accent-primary)] to-[#00ffa3] rounded-2xl p-4 mb-5 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-white opacity-10 rounded-full -translate-y-1/2 translate-x-1/2" />
+      {/* Featured */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles size={18} className="text-[var(--accent-primary)]" />
+          <span className="font-semibold">Featured</span>
+        </div>
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
+          {featuredTickers.map((ticker) => (
+            <TokenCard key={ticker.symbol} ticker={ticker} />
+          ))}
+        </div>
+      </div>
+
+      {/* Crypto Card */}
+      <div className="clay-card p-5 mb-6 relative overflow-hidden">
+        <div className="absolute -right-8 -top-8 w-32 h-32 bg-gradient-to-br from-[#ff6b6b] to-[#ffa502] rounded-full opacity-20" />
+        <div className="absolute -left-4 -bottom-4 w-20 h-20 bg-gradient-to-br from-[#ffa502] to-[#ff6b6b] rounded-full opacity-20" />
+        
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-1">
-            <Bitcoin size={20} className="text-black" />
-            <span className="text-black/70 text-sm font-medium">Crypto Card</span>
+          <div className="flex items-center gap-2 mb-3">
+            <Bitcoin size={24} className="text-[#ff6b6b]" />
+            <span className="font-semibold">Crypto Card</span>
           </div>
-          <div className="text-black text-xs mb-2">Get 5% USDT rebate</div>
-          <button className="px-3 py-1.5 bg-black text-white text-xs font-medium rounded-lg">
+          <div className="text-3xl font-bold font-mono mb-1">5%</div>
+          <div className="text-sm text-[var(--text-secondary)] mb-4">USDT rebate on every trade</div>
+          <button className="clay-btn text-sm py-2 px-4">
             Learn More →
           </button>
         </div>
       </div>
 
-      {/* Featured Tokens */}
-      <div className="mb-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles size={16} className="text-[var(--accent-primary)]" />
-          <span className="font-semibold">Featured</span>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-          {featuredTickers.map((ticker) => (
-            <TokenCard 
-              key={ticker.symbol} 
-              ticker={ticker} 
-              onClick={() => onNavigate('trade')}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Top Gainers */}
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-3">
+      {/* Gainers */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <TrendingUp size={16} className="text-[var(--success)]" />
+            <TrendingUp size={18} className="text-[var(--success)]" />
             <span className="font-semibold">Top Gainers</span>
           </div>
-          <button 
-            onClick={() => onNavigate('markets')}
-            className="text-xs text-[var(--accent-primary)]"
-          >
-            See All →
-          </button>
         </div>
-        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden">
+        <div className="clay-card overflow-hidden">
           {gainers.map((ticker) => (
-            <MarketRow 
-              key={ticker.symbol} 
-              ticker={ticker} 
-              onClick={() => onNavigate('trade')}
-            />
+            <MarketRow key={ticker.symbol} ticker={ticker} />
           ))}
         </div>
       </div>
 
-      {/* Top Losers */}
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-3">
+      {/* Losers */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <TrendingDown size={16} className="text-[var(--danger)]" />
+            <TrendingDown size={18} className="text-[var(--danger)]" />
             <span className="font-semibold">Top Losers</span>
           </div>
         </div>
-        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden">
+        <div className="clay-card overflow-hidden">
           {losers.map((ticker) => (
-            <MarketRow 
-              key={ticker.symbol} 
-              ticker={ticker} 
-              onClick={() => onNavigate('trade')}
-            />
+            <MarketRow key={ticker.symbol} ticker={ticker} />
           ))}
         </div>
       </div>
 
-      {/* Popular Pairs */}
+      {/* Popular */}
       <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Flame size={16} className="text-[var(--warning)]" />
+        <div className="flex items-center gap-2 mb-4">
+          <Flame size={18} className="text-[var(--warning)]" />
           <span className="font-semibold">Popular</span>
         </div>
-        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] overflow-hidden">
+        <div className="clay-card overflow-hidden">
           {tickerList.slice(0, 10).map((ticker) => (
-            <MarketRow 
-              key={ticker.symbol} 
-              ticker={ticker} 
-              onClick={() => onNavigate('trade')}
-            />
+            <MarketRow key={ticker.symbol} ticker={ticker} />
           ))}
         </div>
       </div>
