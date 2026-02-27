@@ -15,8 +15,12 @@ function App() {
         return <ForexPanel />;
       default:
         return (
-          <div className="flex items-center justify-center h-[50vh] text-[var(--text-secondary)]">
-            <p>{activeTab} - Coming soon</p>
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
+            <div className="w-20 h-20 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center mb-4">
+              <span className="text-4xl">🚧</span>
+            </div>
+            <h2 className="font-display text-xl font-semibold mb-2">{activeTab}</h2>
+            <p className="text-[var(--text-secondary)] text-sm">Coming soon...</p>
           </div>
         );
     }
@@ -25,9 +29,9 @@ function App() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] pb-16">
       <Header />
-      <div className="p-4">
+      <main className="px-4 pt-4">
         {renderContent()}
-      </div>
+      </main>
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
