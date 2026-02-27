@@ -93,7 +93,7 @@ function MarketRow({ ticker, onClick }: MarketRowProps) {
 }
 
 interface HomeScreenProps {
-  onNavigate: (tab: string, ticker?: Ticker) => void;
+  onNavigate: (tab: string) => void;
 }
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
@@ -181,7 +181,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             <TokenCard 
               key={ticker.symbol} 
               ticker={ticker} 
-              onClick={() => onNavigate('trade', ticker)}
+              onClick={() => onNavigate('trade')}
             />
           ))}
         </div>
@@ -206,7 +206,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             <MarketRow 
               key={ticker.symbol} 
               ticker={ticker} 
-              onClick={() => onNavigate('trade', ticker)}
+              onClick={() => onNavigate('trade')}
             />
           ))}
         </div>
@@ -225,7 +225,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             <MarketRow 
               key={ticker.symbol} 
               ticker={ticker} 
-              onClick={() => onNavigate('trade', ticker)}
+              onClick={() => onNavigate('trade')}
             />
           ))}
         </div>
@@ -242,7 +242,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             <MarketRow 
               key={ticker.symbol} 
               ticker={ticker} 
-              onClick={() => onNavigate('trade', ticker)}
+              onClick={() => onNavigate('trade')}
             />
           ))}
         </div>

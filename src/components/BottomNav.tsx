@@ -1,4 +1,4 @@
-import { BarChart3, Home, Wallet } from 'lucide-react';
+import { BarChart3, Home, Wallet, Newspaper } from 'lucide-react';
 
 interface BottomNavProps {
   activeTab: string;
@@ -10,12 +10,13 @@ const tabs = [
   { id: 'markets', label: 'Markets', icon: BarChart3 },
   { id: 'trade', label: 'Trade', icon: BarChart3 },
   { id: 'portfolio', label: 'Portfolio', icon: Wallet },
+  { id: 'news', label: 'News', icon: Newspaper },
 ];
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[var(--bg-secondary)]/90 backdrop-blur-2xl border-t border-[var(--border-subtle)] z-50 safe-area-pb">
-      <div className="flex items-center justify-around h-full px-2">
+      <div className="flex items-center justify-around h-full px-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -31,7 +32,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             >
               {/* Active indicator */}
               <div className={`
-                absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full
+                absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full
                 transition-all duration-300
                 ${isActive 
                   ? 'bg-[var(--accent-primary)] shadow-[0_0_10px_var(--accent-primary)]' 
@@ -46,9 +47,9 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
                   : ''
                 }
               `}>
-                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
               </div>
-              <span className={`text-[10px] font-medium transition-all ${isActive ? 'opacity-100' : 'opacity-60'}`}>
+              <span className={`text-[9px] font-medium transition-all ${isActive ? 'opacity-100' : 'opacity-60'}`}>
                 {tab.label}
               </span>
             </button>

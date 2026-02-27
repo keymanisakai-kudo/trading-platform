@@ -4,24 +4,23 @@ import { BottomNav } from './components/BottomNav';
 import { HomeScreen } from './components/HomeScreen';
 import { MobileMarkets } from './components/MobileMarkets';
 import { Portfolio } from './components/Portfolio';
+import { NewsScreen } from './components/NewsScreen';
 
 function App() {
   const [activeTab, setActiveTab] = useState('home');
 
-  const handleNavigate = (tab: string) => {
-    setActiveTab(tab);
-  };
-
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeScreen onNavigate={handleNavigate} />;
+        return <HomeScreen onNavigate={setActiveTab} />;
       case 'markets':
         return <MobileMarkets />;
       case 'trade':
         return <MobileMarkets />;
       case 'portfolio':
         return <Portfolio />;
+      case 'news':
+        return <NewsScreen />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">

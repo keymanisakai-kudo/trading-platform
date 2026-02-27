@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { usePriceStore, fetchTickers } from '../stores/priceStore';
 import type { Ticker } from '../stores/priceStore';
 import { useBinanceWebSocket } from '../hooks/useBinanceWebSocket';
-import { ChevronRight, TrendingUp, Zap, Clock } from 'lucide-react';
+import { ChevronRight, TrendingUp, Zap, Clock, ArrowLeft } from 'lucide-react';
+import { MiniChart } from './MiniChart';
 
 function formatPrice(price: string): string {
   const p = parseFloat(price);
@@ -89,7 +90,7 @@ function TradeScreen({ ticker, onBack }: TradeScreenProps) {
   const orderPrice = orderType === 'market' ? currentPrice : parseFloat(price || '0');
   const orderAmount = parseFloat(amount || '0');
   const total = orderPrice * orderAmount;
-  const available = 10000; // Mock balance
+  const available = 10000;
 
   const handleSubmit = () => {
     if (orderAmount > 0 && total > 0) {
@@ -101,23 +102,31 @@ function TradeScreen({ ticker, onBack }: TradeScreenProps) {
     <div className="animate-fade-in-up">
       {/* Header */}
       <button onClick={onBack} className="flex items-center gap-2 text-[var(--accent-primary)] mb-4">
-        ← Back to markets
+        <ArrowLeft size={18} />
+        Back
       </button>
 
-      {/* Token Info */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-lg font-bold text-white">
-          {symbol.slice(0, 2)}
-        </div>
-        <div>
-          <h2 className="font-display text-xl font-bold">{symbol}/USDT</h2>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-lg">${formatPrice(ticker.price)}</span>
-            <span className={`text-sm ${parseFloat(ticker.priceChangePercent) >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
-              {parseFloat(ticker.priceChangePercent) >= 0 ? '+' : ''}{parseFloat(ticker.priceChangePercent).toFixed(2)}%
-            </span>
+      {/* Token Info with Mini Chart */}
+      <div className="flex gap-4 mb-6">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-lg font-bold text-white">
+            {symbol.slice(0, 2)}
+          </div>
+          <div>
+            <h2 className="font-display text-xl font-bold">{symbol}/USDT</h2>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-lg">${formatPrice(ticker.price)}</span>
+              <span className={`text-sm ${parseFloat(ticker.priceChangePercent) >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+                {parseFloat(ticker.priceChangePercent) >= 0 ? '+' : ''}{parseFloat(ticker.priceChangePercent).toFixed(2)}%
+              </span>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Mini Chart */}
+      <div className="h-[180px] bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-3 mb-4">
+        <MiniChart symbol={ticker.symbol} />
       </div>
 
       {/* Buy/Sell Tabs */}
@@ -172,7 +181,6 @@ function TradeScreen({ ticker, onBack }: TradeScreenProps) {
 
       {/* Order Form */}
       <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-4 mb-4">
-        {/* Price Input */}
         {orderType === 'limit' && (
           <div className="mb-4">
             <label className="block text-sm text-[var(--text-muted)] mb-2">Price (USDT)</label>
@@ -183,25 +191,12 @@ function TradeScreen({ ticker, onBack }: TradeScreenProps) {
               placeholder="0.00"
               className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 font-mono text-lg focus:outline-none focus:border-[var(--accent-primary)]"
             />
-            <div className="flex gap-2 mt-2">
-              {['0.5%', '1%', '5%'].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPrice((currentPrice * (1 + parseFloat(p) / 100)).toFixed(4))}
-                  className="px-3 py-1 text-xs bg-[var(--bg-elevated)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                >
-                  +{p}
-                </button>
-              ))}
-            </div>
           </div>
         )}
 
-        {/* Amount Input */}
         <div className="mb-4">
           <div className="flex justify-between mb-2">
             <label className="text-sm text-[var(--text-muted)]">Amount ({symbol})</label>
-            <button className="text-sm text-[var(--accent-primary)]">Max</button>
           </div>
           <input
             type="number"
@@ -212,20 +207,17 @@ function TradeScreen({ ticker, onBack }: TradeScreenProps) {
           />
         </div>
 
-        {/* Total */}
         <div className="flex justify-between items-center py-3 border-t border-[var(--border-subtle)]">
           <span className="text-[var(--text-muted)]">Total</span>
           <span className="font-mono font-semibold">{total.toFixed(2)} USDT</span>
         </div>
 
-        {/* Available */}
         <div className="flex justify-between items-center">
           <span className="text-[var(--text-muted)]">Available</span>
           <span className="font-mono text-[var(--text-secondary)]">{available.toFixed(2)} USDT</span>
         </div>
       </div>
 
-      {/* Submit Button */}
       <button
         onClick={handleSubmit}
         disabled={!amount || total <= 0}
@@ -240,7 +232,7 @@ function TradeScreen({ ticker, onBack }: TradeScreenProps) {
 
       {/* Confirmation Modal */}
       {showConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50 animate-fade-in-up">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50">
           <div className="bg-[var(--bg-card)] w-full rounded-t-3xl p-6 animate-slide-in-right">
             <h3 className="font-display text-lg font-bold mb-4">Confirm Order</h3>
             
@@ -308,7 +300,7 @@ export function MobileMarkets() {
         setTickers(data);
         setError(null);
       } catch (err) {
-        setError('Failed to load market data');
+        setError('Failed to load');
       } finally {
         setLoading(false);
       }
@@ -323,11 +315,10 @@ export function MobileMarkets() {
     .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
     .slice(0, 20);
 
-  // Show trade screen if selected
   if (selectedTicker) {
     return (
       <TradeScreen 
-        ticker={selectedTicker} 
+        ticker={tickers[selectedTicker.symbol] || selectedTicker} 
         onBack={() => setSelectedTicker(null)} 
       />
     );
@@ -337,7 +328,6 @@ export function MobileMarkets() {
     <div className="pb-4">
       <h1 className="font-display text-2xl font-bold mb-4">Markets</h1>
       
-      {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] p-3">
           <div className="text-xs text-[var(--text-muted)] mb-1">Assets</div>
@@ -357,19 +347,6 @@ export function MobileMarkets() {
         </div>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex gap-2 mb-4 overflow-x-auto">
-        {['All', 'Favorites', 'Gainers', 'Losers'].map((cat) => (
-          <button
-            key={cat}
-            className="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)]"
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Price List */}
       {tickerList.length === 0 ? (
         <div className="text-center py-12 text-[var(--text-secondary)]">Loading...</div>
       ) : (
