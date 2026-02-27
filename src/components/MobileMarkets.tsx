@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePriceStore, fetchTickers } from '../stores/priceStore';
 import type { Ticker } from '../stores/priceStore';
 import { useBinanceWebSocket } from '../hooks/useBinanceWebSocket';
-import { ChevronRight, Activity, TrendingUp, Zap } from 'lucide-react';
+import { ChevronRight, TrendingUp, Zap, Clock } from 'lucide-react';
 
 function formatPrice(price: string): string {
   const p = parseFloat(price);
@@ -15,17 +15,15 @@ function formatVolume(volume: string): string {
   const v = parseFloat(volume);
   if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
   if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
-  if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K';
-  return v.toFixed(0);
+  return (v / 1e3).toFixed(1) + 'K';
 }
 
 interface PriceRowProps {
   ticker: Ticker;
-  index: number;
   onClick: () => void;
 }
 
-function PriceRow({ ticker, index, onClick }: PriceRowProps) {
+function PriceRow({ ticker, onClick }: PriceRowProps) {
   const priceChange = parseFloat(ticker.priceChangePercent);
   const isPositive = priceChange >= 0;
   const symbol = ticker.symbol.replace('USDT', '');
@@ -33,17 +31,9 @@ function PriceRow({ ticker, index, onClick }: PriceRowProps) {
   return (
     <button
       onClick={onClick}
-      className={`
-        w-full flex items-center justify-between p-4 
-        bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)]
-        mb-2 transition-all duration-200 animate-fade-in-up
-        hover:border-[var(--border-active)] hover:translate-y-[-2px]
-        active:scale-[0.99]
-      `}
-      style={{ animationDelay: `${index * 0.03}s` }}
+      className="w-full flex items-center justify-between p-4 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] mb-2 transition-all duration-200 hover:border-[var(--border-active)]"
     >
       <div className="flex items-center gap-3">
-        {/* Crypto Icon */}
         <div className={`
           w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold
           ${['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'AVAX'].includes(symbol) 
@@ -53,20 +43,16 @@ function PriceRow({ ticker, index, onClick }: PriceRowProps) {
         `}>
           {symbol.slice(0, 2)}
         </div>
-        
         <div className="text-left">
-          <div className="font-semibold text-[var(--text-primary)]">{symbol}</div>
+          <div className="font-semibold">{symbol}</div>
           <div className="text-xs text-[var(--text-muted)]">Vol: ${formatVolume(ticker.quoteVolume)}</div>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
         <div className="text-right">
-          <div className="font-mono font-semibold text-[var(--text-primary)]">${formatPrice(ticker.price)}</div>
-          <div className={`
-            text-xs font-medium flex items-center justify-end gap-1
-            ${isPositive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}
-          `}>
+          <div className="font-mono font-semibold">${formatPrice(ticker.price)}</div>
+          <div className={`text-xs font-medium flex items-center justify-end gap-1 ${isPositive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
             <TrendingUp size={12} className={isPositive ? '' : 'rotate-180'} />
             {isPositive ? '+' : ''}{priceChange.toFixed(2)}%
           </div>
@@ -77,11 +63,243 @@ function PriceRow({ ticker, index, onClick }: PriceRowProps) {
   );
 }
 
+// Trade Screen Component
+interface TradeScreenProps {
+  ticker: Ticker | null;
+  onBack: () => void;
+}
+
+function TradeScreen({ ticker, onBack }: TradeScreenProps) {
+  const [orderType, setOrderType] = useState<'market' | 'limit'>('limit');
+  const [side, setSide] = useState<'buy' | 'sell'>('buy');
+  const [price, setPrice] = useState('');
+  const [amount, setAmount] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  useEffect(() => {
+    if (ticker) {
+      setPrice(formatPrice(ticker.price));
+    }
+  }, [ticker]);
+
+  if (!ticker) return null;
+
+  const symbol = ticker.symbol.replace('USDT', '');
+  const currentPrice = parseFloat(ticker.price);
+  const orderPrice = orderType === 'market' ? currentPrice : parseFloat(price || '0');
+  const orderAmount = parseFloat(amount || '0');
+  const total = orderPrice * orderAmount;
+  const available = 10000; // Mock balance
+
+  const handleSubmit = () => {
+    if (orderAmount > 0 && total > 0) {
+      setShowConfirm(true);
+    }
+  };
+
+  return (
+    <div className="animate-fade-in-up">
+      {/* Header */}
+      <button onClick={onBack} className="flex items-center gap-2 text-[var(--accent-primary)] mb-4">
+        ← Back to markets
+      </button>
+
+      {/* Token Info */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-lg font-bold text-white">
+          {symbol.slice(0, 2)}
+        </div>
+        <div>
+          <h2 className="font-display text-xl font-bold">{symbol}/USDT</h2>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-lg">${formatPrice(ticker.price)}</span>
+            <span className={`text-sm ${parseFloat(ticker.priceChangePercent) >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+              {parseFloat(ticker.priceChangePercent) >= 0 ? '+' : ''}{parseFloat(ticker.priceChangePercent).toFixed(2)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Buy/Sell Tabs */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setSide('buy')}
+          className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+            side === 'buy' 
+              ? 'bg-[var(--success)] text-black shadow-[0_0_20px_var(--success-subtle)]' 
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
+          }`}
+        >
+          Buy
+        </button>
+        <button
+          onClick={() => setSide('sell')}
+          className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+            side === 'sell' 
+              ? 'bg-[var(--danger)] text-white shadow-[0_0_20px_var(--danger-subtle)]' 
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
+          }`}
+        >
+          Sell
+        </button>
+      </div>
+
+      {/* Order Type */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setOrderType('limit')}
+          className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+            orderType === 'limit' 
+              ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]' 
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
+          }`}
+        >
+          <Zap size={14} className="inline mr-1" />
+          Limit
+        </button>
+        <button
+          onClick={() => setOrderType('market')}
+          className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+            orderType === 'market' 
+              ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]' 
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)]'
+          }`}
+        >
+          <Clock size={14} className="inline mr-1" />
+          Market
+        </button>
+      </div>
+
+      {/* Order Form */}
+      <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-4 mb-4">
+        {/* Price Input */}
+        {orderType === 'limit' && (
+          <div className="mb-4">
+            <label className="block text-sm text-[var(--text-muted)] mb-2">Price (USDT)</label>
+            <input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0.00"
+              className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 font-mono text-lg focus:outline-none focus:border-[var(--accent-primary)]"
+            />
+            <div className="flex gap-2 mt-2">
+              {['0.5%', '1%', '5%'].map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPrice((currentPrice * (1 + parseFloat(p) / 100)).toFixed(4))}
+                  className="px-3 py-1 text-xs bg-[var(--bg-elevated)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                >
+                  +{p}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Amount Input */}
+        <div className="mb-4">
+          <div className="flex justify-between mb-2">
+            <label className="text-sm text-[var(--text-muted)]">Amount ({symbol})</label>
+            <button className="text-sm text-[var(--accent-primary)]">Max</button>
+          </div>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 font-mono text-lg focus:outline-none focus:border-[var(--accent-primary)]"
+          />
+        </div>
+
+        {/* Total */}
+        <div className="flex justify-between items-center py-3 border-t border-[var(--border-subtle)]">
+          <span className="text-[var(--text-muted)]">Total</span>
+          <span className="font-mono font-semibold">{total.toFixed(2)} USDT</span>
+        </div>
+
+        {/* Available */}
+        <div className="flex justify-between items-center">
+          <span className="text-[var(--text-muted)]">Available</span>
+          <span className="font-mono text-[var(--text-secondary)]">{available.toFixed(2)} USDT</span>
+        </div>
+      </div>
+
+      {/* Submit Button */}
+      <button
+        onClick={handleSubmit}
+        disabled={!amount || total <= 0}
+        className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+          side === 'buy'
+            ? 'bg-[var(--success)] text-black hover:opacity-90'
+            : 'bg-[var(--danger)] text-white hover:opacity-90'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        {side === 'buy' ? 'Buy' : 'Sell'} {symbol}
+      </button>
+
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50 animate-fade-in-up">
+          <div className="bg-[var(--bg-card)] w-full rounded-t-3xl p-6 animate-slide-in-right">
+            <h3 className="font-display text-lg font-bold mb-4">Confirm Order</h3>
+            
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Type</span>
+                <span className="capitalize">{orderType}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Side</span>
+                <span className={side === 'buy' ? 'text-[var(--success)]' : 'text-[var(--danger)]'}>
+                  {side.toUpperCase()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Price</span>
+                <span className="font-mono">{orderPrice.toFixed(4)} USDT</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">Amount</span>
+                <span className="font-mono">{orderAmount} {symbol}</span>
+              </div>
+              <div className="flex justify-between font-bold pt-3 border-t border-[var(--border-subtle)]">
+                <span>Total</span>
+                <span className="font-mono">{total.toFixed(2)} USDT</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirm(false);
+                  setAmount('');
+                  alert(`${side === 'buy' ? 'Buy' : 'Sell'} order placed!`);
+                }}
+                className={`flex-1 py-3 rounded-xl font-semibold ${
+                  side === 'buy' ? 'bg-[var(--success)] text-black' : 'bg-[var(--danger)] text-white'
+                }`}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MobileMarkets() {
   const { tickers, setTickers, setLoading, setError } = usePriceStore();
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [selectedTicker, setSelectedTicker] = useState<Ticker | null>(null);
   
-  // Fetch initial data
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -95,11 +313,9 @@ export function MobileMarkets() {
         setLoading(false);
       }
     };
-
     loadData();
   }, []);
 
-  // Connect to WebSocket for real-time updates
   const symbols = Object.keys(tickers).slice(0, 20);
   useBinanceWebSocket(symbols);
 
@@ -107,91 +323,61 @@ export function MobileMarkets() {
     .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
     .slice(0, 20);
 
-  const categories = [
-    { id: 'all', label: 'All' },
-    { id: 'favorites', label: 'Favorites' },
-    { id: 'gainers', label: 'Gainers' },
-    { id: 'losers', label: 'Losers' },
-  ];
-
-  const filteredList = tickerList.filter((ticker) => {
-    if (activeCategory === 'gainers') return parseFloat(ticker.priceChangePercent) > 0;
-    if (activeCategory === 'losers') return parseFloat(ticker.priceChangePercent) < 0;
-    return true;
-  });
-
-  // Calculate market stats
-  const totalVolume = tickerList.reduce((acc, t) => acc + parseFloat(t.quoteVolume), 0);
-  const gainers = tickerList.filter(t => parseFloat(t.priceChangePercent) > 0).length;
+  // Show trade screen if selected
+  if (selectedTicker) {
+    return (
+      <TradeScreen 
+        ticker={selectedTicker} 
+        onBack={() => setSelectedTicker(null)} 
+      />
+    );
+  }
 
   return (
     <div className="pb-4">
-      {/* Header Stats */}
-      <div className="mb-5">
-        <h1 className="font-display text-2xl font-bold mb-4">Markets</h1>
-        
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] p-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Activity size={14} className="text-[var(--accent-primary)]" />
-              <span className="text-xs text-[var(--text-muted)]">Assets</span>
-            </div>
-            <div className="font-mono font-bold text-lg">{tickerList.length}</div>
-          </div>
-          
-          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] p-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <TrendingUp size={14} className="text-[var(--success)]" />
-              <span className="text-xs text-[var(--text-muted)]">Gainers</span>
-            </div>
-            <div className="font-mono font-bold text-lg text-[var(--success)]">{gainers}</div>
-          </div>
-          
-          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] p-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Zap size={14} className="text-[var(--warning)]" />
-              <span className="text-xs text-[var(--text-muted)]">24h Vol</span>
-            </div>
-            <div className="font-mono font-bold text-lg">${formatVolume(totalVolume.toString())}</div>
+      <h1 className="font-display text-2xl font-bold mb-4">Markets</h1>
+      
+      {/* Quick Stats */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] p-3">
+          <div className="text-xs text-[var(--text-muted)] mb-1">Assets</div>
+          <div className="font-mono font-bold text-lg">{tickerList.length}</div>
+        </div>
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] p-3">
+          <div className="text-xs text-[var(--text-muted)] mb-1">Gainers</div>
+          <div className="font-mono font-bold text-lg text-[var(--success)]">
+            {tickerList.filter(t => parseFloat(t.priceChangePercent) > 0).length}
           </div>
         </div>
-        
-        {/* Category Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`
-                px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200
-                ${activeCategory === cat.id 
-                  ? 'bg-[var(--accent-primary)] text-black shadow-[0_0_20px_var(--accent-glow)]' 
-                  : 'bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-active)]'
-                }
-              `}
-            >
-              {cat.label}
-            </button>
-          ))}
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] p-3">
+          <div className="text-xs text-[var(--text-muted)] mb-1">24h Vol</div>
+          <div className="font-mono font-bold text-lg">
+            ${formatVolume(tickerList.reduce((acc, t) => acc + parseFloat(t.quoteVolume), 0).toString())}
+          </div>
         </div>
       </div>
 
+      {/* Category Tabs */}
+      <div className="flex gap-2 mb-4 overflow-x-auto">
+        {['All', 'Favorites', 'Gainers', 'Losers'].map((cat) => (
+          <button
+            key={cat}
+            className="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)]"
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
       {/* Price List */}
-      {filteredList.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center">
-            <Activity size={32} className="text-[var(--text-muted)]" />
-          </div>
-          <p className="text-[var(--text-secondary)]">Loading market data...</p>
-        </div>
+      {tickerList.length === 0 ? (
+        <div className="text-center py-12 text-[var(--text-secondary)]">Loading...</div>
       ) : (
-        filteredList.map((ticker, index) => (
+        tickerList.map((ticker) => (
           <PriceRow
             key={ticker.symbol}
             ticker={ticker}
-            index={index}
-            onClick={() => console.log('Selected:', ticker.symbol)}
+            onClick={() => setSelectedTicker(ticker)}
           />
         ))
       )}
