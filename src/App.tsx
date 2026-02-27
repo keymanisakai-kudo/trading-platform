@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { MobileMarkets } from './components/MobileMarkets';
+import { Portfolio } from './components/Portfolio';
 
 function App() {
   const [activeTab, setActiveTab] = useState('markets');
@@ -11,6 +12,8 @@ function App() {
       case 'markets':
       case 'trade':
         return <MobileMarkets />;
+      case 'portfolio':
+        return <Portfolio />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
