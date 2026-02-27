@@ -1,4 +1,4 @@
-import { BarChart3, Bitcoin, Globe, Wallet } from 'lucide-react';
+import { BarChart3, Home, Wallet } from 'lucide-react';
 
 interface BottomNavProps {
   activeTab: string;
@@ -6,10 +6,10 @@ interface BottomNavProps {
 }
 
 const tabs = [
-  { id: 'markets', label: 'Markets', icon: Bitcoin },
+  { id: 'home', label: 'Home', icon: Home },
+  { id: 'markets', label: 'Markets', icon: BarChart3 },
   { id: 'trade', label: 'Trade', icon: BarChart3 },
   { id: 'portfolio', label: 'Portfolio', icon: Wallet },
-  { id: 'news', label: 'News', icon: Globe },
 ];
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {

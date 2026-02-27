@@ -1,15 +1,23 @@
 import { useState } from 'react';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
+import { HomeScreen } from './components/HomeScreen';
 import { MobileMarkets } from './components/MobileMarkets';
 import { Portfolio } from './components/Portfolio';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('markets');
+  const [activeTab, setActiveTab] = useState('home');
+
+  const handleNavigate = (tab: string) => {
+    setActiveTab(tab);
+  };
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'home':
+        return <HomeScreen onNavigate={handleNavigate} />;
       case 'markets':
+        return <MobileMarkets />;
       case 'trade':
         return <MobileMarkets />;
       case 'portfolio':
