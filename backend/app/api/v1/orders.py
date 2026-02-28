@@ -4,7 +4,12 @@ from uuid import UUID
 from decimal import Decimal
 from typing import Optional
 
-from app.infrastructure.persistence.database import get_db
+from app.api.v1.deps import (
+    get_current_user,
+    get_order_repo,
+    get_wallet_repo,
+    get_db,
+)
 from app.infrastructure.persistence.repositories import (
     SQLAlchemyOrderRepository,
     SQLAlchemyWalletRepository,
@@ -21,10 +26,7 @@ from app.application.orders.queries import (
     ListOrdersQuery,
     ListOrdersHandler,
 )
-
-# Dependency imports
-from app.api.v1.auth import get_current_user
-from app.models.user import User
+from app.domain.user.aggregate import User
 
 
 router = APIRouter(prefix="/orders", tags=["Orders"])

@@ -3,7 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from decimal import Decimal
 from typing import Optional
 
-from app.infrastructure.persistence.database import get_db
+from app.api.v1.deps import (
+    get_current_user,
+    get_db,
+)
 from app.infrastructure.persistence.repositories import (
     SQLAlchemyWalletRepository,
     SQLAlchemyTransactionRepository,
@@ -20,10 +23,7 @@ from app.application.wallet.queries import (
     ListTransactionsQuery,
     ListTransactionsHandler,
 )
-
-# Dependency imports
-from app.api.v1.auth import get_current_user
-from app.models.user import User
+from app.domain.user.aggregate import User
 
 
 router = APIRouter(prefix="/wallet", tags=["Wallet"])
