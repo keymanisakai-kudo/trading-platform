@@ -1,73 +1,70 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.core.database import get_db
-from app.models.user import User
-from app.models.wallet import Wallet, Transaction
-from app.schemas.user import (
-    WalletBalanceResponse,
-    BalanceResponse,
-    DepositAddressResponse,
-    WithdrawRequest,
-    TransactionResponse,
+"""Wallet API - DDD Style"""
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from decimal import Decimal
+from typing import Optional
+
+from app.infrastructure.persistence.database import get_db
+from app.infrastructure.persistence.repositories import (
+    SQLAlchemyWalletRepository,
+    SQLAlchemyTransactionRepository,
 )
+from app.application.wallet.commands import (
+    GetBalanceQuery,
+    GetBalanceHandler,
+    DepositCommand,
+    DepositHandler,
+    WithdrawCommand,
+    WithdrawHandler,
+)
+from app.application.wallet.queries import (
+    ListTransactionsQuery,
+    ListTransactionsHandler,
+)
+
+# Dependency imports
 from app.api.v1.auth import get_current_user
+from app.models.user import User
 
 
 router = APIRouter(prefix="/wallet", tags=["Wallet"])
 
 
-# Mock deposit addresses (in production, generate via blockchain)
+# Mock deposit addresses
 MOCK_ADDRESSES = {
-    "USDT": {
-        "TRC20": "TXxxxxTRC20Address",
-        "ERC20": "0x....ERC20Address",
-    },
-    "BTC": {
-        "BTC": "bc1qxxxxBitcoinAddress",
-    },
+    "USDT": {"TRC20": "TXxxxxTRC20Address", "ERC20": "0x....ERC20Address"},
+    "BTC": {"BTC": "bc1qxxxxBitcoinAddress"},
 }
 
 
-@router.get("/balance", response_model=WalletBalanceResponse)
+@router.get("/balance")
 async def get_balance(
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db=Depends(get_db),
 ):
-    result = await db.execute(
-        select(Wallet).where(Wallet.user_id == current_user.id)
-    )
-    wallets = result.scalars().all()
+    """Get user's wallet balance"""
+    wallet_repo = SQLAlchemyWalletRepository(db)
+    handler = GetBalanceHandler(wallet_repo)
     
-    balances = []
-    total_usdt = 0.0
+    query = GetBalanceQuery(user_id=current_user.id)
+    result = await handler.handle(query)
     
-    for wallet in wallets:
-        total = float(wallet.balance) + float(wallet.locked)
-        balances.append(BalanceResponse(
-            currency=wallet.currency,
-            available=float(wallet.balance),
-            locked=float(wallet.locked),
-            total=total,
-        ))
-        
-        # Simple USDT conversion (in production, use real prices)
-        if wallet.currency == "USDT":
-            total_usdt += total
-    
-    return WalletBalanceResponse(
-        balances=balances,
-        total_usdt_value=total_usdt
-    )
+    return {
+        "balances": [{
+            "currency": result.currency,
+            "available": result.available_balance,
+            "locked": result.locked_balance,
+            "total": result.balance,
+        }],
+        "total_usdt_value": result.balance,
+    }
 
 
-@router.get("/deposit/address", response_model=DepositAddressResponse)
+@router.get("/deposit/address")
 async def get_deposit_address(
-    currency: str = "USDT",
-    network: str = "TRC20",
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    currency: str = Query("USDT", description="Currency"),
+    network: str = Query("TRC20", description="Network"),
 ):
+    """Get deposit address (mock)"""
     if currency not in MOCK_ADDRESSES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -80,84 +77,96 @@ async def get_deposit_address(
             detail=f"Network {network} not supported for {currency}"
         )
     
-    return DepositAddressResponse(
-        currency=currency,
-        address=MOCK_ADDRESSES[currency][network],
-        network=network,
-    )
+    return {
+        "currency": currency,
+        "address": MOCK_ADDRESSES[currency][network],
+        "network": network,
+    }
 
 
-@router.post("/withdraw", response_model=TransactionResponse)
-async def withdraw(
-    request: WithdrawRequest,
+@router.post("/deposit")
+async def deposit(
+    amount: float = Query(..., gt=0, description="Deposit amount"),
+    currency: str = Query("USDT", description="Currency"),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db=Depends(get_db),
 ):
-    # Get user wallet
-    result = await db.execute(
-        select(Wallet).where(
-            Wallet.user_id == current_user.id,
-            Wallet.currency == request.currency
-        )
+    """Deposit funds (mock - in production, this would be callback from payment gateway)"""
+    wallet_repo = SQLAlchemyWalletRepository(db)
+    handler = DepositHandler(wallet_repo)
+    
+    command = DepositCommand(
+        user_id=current_user.id,
+        amount=Decimal(str(amount)),
     )
-    wallet = result.scalar_one_or_none()
     
-    if not wallet:
-        # Create wallet if not exists
-        wallet = Wallet(
-            user_id=current_user.id,
-            currency=request.currency,
-            balance=0,
-            locked=0
-        )
-        db.add(wallet)
-        await db.commit()
-        await db.refresh(wallet)
+    result = await handler.handle(command)
+    await db.commit()
     
-    # Check balance
-    available = float(wallet.balance)
-    if available < request.amount:
+    return {
+        "transaction_id": str(result.transaction_id) if result.transaction_id else None,
+        "balance": result.balance,
+        "message": result.message,
+    }
+
+
+@router.post("/withdraw")
+async def withdraw(
+    amount: float = Query(..., gt=0, description="Withdrawal amount"),
+    address: str = Query(..., description="Withdrawal address"),
+    currency: str = Query("USDT", description="Currency"),
+    network: str = Query("TRC20", description="Network"),
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Withdraw funds"""
+    wallet_repo = SQLAlchemyWalletRepository(db)
+    handler = WithdrawHandler(wallet_repo)
+    
+    command = WithdrawCommand(
+        user_id=current_user.id,
+        amount=Decimal(str(amount)),
+    )
+    
+    result = await handler.handle(command)
+    
+    if "not found" in result.message.lower() or "insufficient" in result.message.lower():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Insufficient balance"
+            detail=result.message
         )
     
-    # Deduct balance
-    wallet.balance = available - request.amount
-    
-    # Create transaction record
-    # Note: In production, this would trigger blockchain withdrawal
-    tx_fee = request.amount * 0.001  # 0.1% fee
-    
-    transaction = Transaction(
-        user_id=current_user.id,
-        wallet_id=wallet.id,
-        type="withdraw",
-        amount=request.amount,
-        fee=tx_fee,
-        status="pending",
-        address=request.address,
-    )
-    db.add(transaction)
     await db.commit()
-    await db.refresh(transaction)
     
-    return transaction
+    return {
+        "transaction_id": str(result.transaction_id) if result.transaction_id else None,
+        "balance": result.balance,
+        "message": result.message,
+    }
 
 
-@router.get("/transactions", response_model=list[TransactionResponse])
+@router.get("/transactions")
 async def get_transactions(
-    limit: int = 50,
-    offset: int = 0,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db=Depends(get_db),
 ):
-    result = await db.execute(
-        select(Transaction)
-        .where(Transaction.user_id == current_user.id)
-        .order_by(Transaction.created_at.desc())
-        .limit(limit)
-        .offset(offset)
+    """Get transaction history"""
+    wallet_repo = SQLAlchemyWalletRepository(db)
+    tx_repo = SQLAlchemyTransactionRepository(db)
+    
+    handler = ListTransactionsHandler(wallet_repo, tx_repo)
+    
+    query = ListTransactionsQuery(
+        user_id=current_user.id,
+        limit=limit,
+        offset=offset,
     )
-    transactions = result.scalars().all()
-    return transactions
+    
+    result = await handler.handle(query)
+    
+    return {
+        "transactions": result.transactions,
+        "total": result.total,
+    }
